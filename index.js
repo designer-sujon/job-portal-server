@@ -31,6 +31,7 @@ async function run() {
 
     // jobs related api
     const jobsCollection = client.db('jobPortal').collection('jobs')
+    const jobsApplicationCollection = client.db('jobPortal').collection('job_applications')
 
     app.get('/jobs', async(req, res)=>{
         const cursor = jobsCollection.find()
@@ -45,6 +46,31 @@ async function run() {
         res.send(result)
     })
 
+    // job application api
+    app.get('/job-application', async(req, res)=>{
+      const email = req.query.email;
+      const query = {applicant_email: email}
+      const result = await jobsApplicationCollection.find(query).toArray()
+      // aggregate data
+      for(const application of result){
+        console.log(application.job_id)
+        const query1 = {_id: new ObjectId(application.job_id)}
+      const job = await jobsCollection.findOne(query1)
+      if(job){
+        application.title= job.title
+        application.company = job.company
+        application.location = job.location
+        application.company_logo = job.company_logo
+      }
+      }
+      res.send(result)
+    })
+
+    app.post('/job-applications', async(req, res)=>{
+      const application = req.body
+     const result = await jobsApplicationCollection.insertOne(application)
+     res.send(result)
+    })
 
 
   } finally {
